@@ -156,7 +156,7 @@ class MigrationService {
                     price: row.price
                 });
             }
-            console.log("⏳ Insertando entidades únicas en PostgreSQL...");
+            console.log(" Insertando entidades únicas en PostgreSQL...");
 
             try {
                 await this.db.query('BEGIN');
