@@ -14,14 +14,12 @@ class App {
   }
 
   routes(){
-    // rutas
+  
     //ruta de prueba
     this.server.get('/api/health',(req,res)=>{
       res.status(200).json({message:"API is healthy"})
     });
-
     // aqui colocar las rutas de la aplicación, por ejemplo:
-    // this.server.use('/api/users', userRoutes);
     this.server.use('/api', router);
   }
 
