@@ -38,3 +38,5 @@ class PostgresDB {
         }
     }
 }
+
+export default new PostgresDB();

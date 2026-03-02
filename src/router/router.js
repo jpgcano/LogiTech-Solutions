@@ -1,6 +1,6 @@
 import { Router } from "express";
 import MigrationService from "../services/MigrationService.js";
-
+import SuppliersService from "../services/SuppliersService.js";
 const router = Router();
 
 router.post('/migrate', async (req, res) => {try {
@@ -16,5 +16,21 @@ router.post('/migrate', async (req, res) => {try {
         });
     }
 });
+
+ router.get('/Suppliers', async (req, res) => {
+    try {
+        const suppliers = await SuppliersService.getSuppliers();
+        res.status(200).json(suppliers);
+    } catch (error) {
+        console.error("Error al obtener proveedores:", error);
+        res.status(500).json({
+            ok: false,
+            error: "Hubo un error al obtener los proveedores",
+            detalle: error.message
+        });
+    }
+});
+
+
 
 export default router;

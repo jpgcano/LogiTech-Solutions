@@ -13,7 +13,7 @@ class  DataBaseSetup{
             console.log("Leyendo base de datos... y configurando posgrest");
 
         // buscamos el archivo con las definiciones de tablas
-        const slqFilePath = path.resolve(__dirname, '../../scripts/tables.sql');
+        const slqFilePath = path.resolve(__dirname, '../../script/table.sql');
         const slqquery = await fs.readFile(slqFilePath, 'utf-8');
 
         // le pedimos  a posgres  que ejecute el query 

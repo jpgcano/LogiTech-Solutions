@@ -1,17 +1,17 @@
 
 CREATE TABLE IF NOT EXISTS city (
-    city_Id int  PRIMARY key,
+    city_Id  serial UNIQUE PRIMARY KEY,
     specialty VARCHAR(100) NOT NULL
 );
 
 create table if not exists supplier(
- supplier_id int primary key,
+ supplier_id serial unique primary key,
  supplier_name varchar(30),
  supplier_email varchar(30)
 
 );
 create table if not exists category(
-category_id int primary key,
+category_id serial unique primary key,
 category_name varchar(50)
 );
 
@@ -24,7 +24,7 @@ unit_price decimal(10,3)
 );
 
 create table if not exists product_supplier(
-id int primary key,
+id serial unique primary key,
 product_sku varchar(30) references product(product_sku),
 supplier_id int references  supplier(supplier_id),
 quantity int,
@@ -32,7 +32,7 @@ total_line_value decimal(10,3)
 );
 
 create table  if not exists customer(
-	customer_id int primary key,
+	customer_id serial unique primary key,
 	customer_name varchar(30),
 	customer_email varchar(30),
 	customer_phone varchar(15),
@@ -46,7 +46,7 @@ datesale date,
 customer int references customer(customer_id),
 total decimal(10,3)
 );
-create table if not exists sale_procuct(
+create table if not exists sale_product(
 sale varchar(30) references sale(transaction_id),
 product_sku varchar(30) references product(product_sku),
 amount int,

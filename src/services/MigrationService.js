@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { parse } from 'csv-parse/sync';
 import postgresDB from '../config/postgres.js';
 import { env } from '../config/env.js';
-import patientService from '../services/PatientService.js';
+import SalesService from '../services/salesServices.js';
 
 class MigrationService {
     constructor() {
@@ -45,30 +45,29 @@ class MigrationService {
 
     // 2. Método para transformar los datos a formato NoSQL (Encapsulamiento)
     parseRowsToMongoFormat(rows) {
-        // const histories = new Map();
-        // for (const row of rows) {
-        //     if (!histories.has(row.patient_email)) {
-        //         histories.set(row.patient_email, {
-        //             patientEmail: row.patient_email,
-        //             patientName: row.patient_name,
-        //             appointments: []
-        //         });
-        //     }
-        //     histories.get(row.patient_email).appointments.push({
-        //         appointmentId: row.appointment_id,
-        //         date: row.appointment_date,
-        //         doctorName: row.doctor_name,
-        //         doctorEmail: row.doctor_email,
-        //         specialty: row.specialty,
-        //         treatmentCode: row.treatment_code,
-        //         treatmentDescription: row.treatment_description,
-        //         treatmentCost: parseFloat(row.treatment_cost),
-        //         insuranceProvider: row.insurance_provider,
-        //         coveragePercentage: parseInt(row.coverage_percentage),
-        //         amountPaid: parseFloat(row.amount_paid)
-        //     });
-        // }
-        return Array.from(histories.values());
+        const sale = new Map();
+        for (const row of rows) {
+            if (!sale.has(row.customer)) {
+                customer_email.set(row.customer_email, {
+                    customer_email: row.customer_email,
+                    customer_name: row.customer_name,
+                    product_name: []
+                });
+            }
+            sale.get(row.product_sku).product_sku.push({
+                transaction_id: row.transaction_id,
+                date: row.date,
+                product_sku: row.product_sku,
+                product_name: row.product_name,
+                product_category: row.product_category,
+                quantity: parseInt(row.quantity),
+                unit_price: parseFloat(row.unit_price),
+                total_line_value: parseFloat(row.total_line_value),
+                supplier_name: row.supplier_name,
+                supplier_email: row.supplier_email,
+            });
+        }
+        return Array.from(sale.values());
     }
 
     async processAndInsert(rows) {
@@ -80,18 +79,11 @@ class MigrationService {
         const customer = new Map();
         const sale = new Map();
         const sale_product = new Map();
-        let cityIdCounter = 1;
-        let supIdCounter = 1;
-        let catIdCounter = 1;
-        let proIdCounter = 1;
-        let custIdCounter = 1;
-        let saleIdCounter = 1;
 
         for (const row of rows) {
             // city
             if (!city.has(row.customer_address)) {
                 city.set(row.customer_address, {
-                    id: cityIdCounter++,
                     name: row.city[1] // separar los datos de addres y ciudad y quedarnos solo con el nombre de la ciudad, para no tener datos repetidos en la tabla cit
                 });
             }
@@ -100,7 +92,6 @@ class MigrationService {
             // supplier
             if (!supplier.has(row.supplier)) {
                 supplier.set(row.supplier, {
-                    id: supIdCounter++,
                     name: row.supplier_name,
                     email: row.supplier_email
                 });
@@ -110,7 +101,6 @@ class MigrationService {
             // category
             if (!category.has(row.category)) {
                 category.set(row.category, {
-                    id: catIdCounter++,
                     name: row.product_category
                 });
             }
@@ -138,10 +128,9 @@ class MigrationService {
             // customer
             if (!customer.has(row.customer_email)) {
                 customer.set(row.customer_email, {
-                    id: custIdCounter++,
                     name: row.customer_name,
                     email: row.customer_email,
-                    phone: row.customer_phone   ,
+                    phone: row.customer_phone,
                     address: row.customer_address[0] // separar los datos de addres y ciudad y quedarnos solo con la dirección, para no tener datos repetidos en la tabla customer
                 });
             }
@@ -150,7 +139,7 @@ class MigrationService {
             // sale
             if (!sale.has(row.sale_id)) {
                 sale.set(row.sale_id, {
-                    id: `SALE-${String(saleIdCounter++).padStart(3, '0')}`,
+                    id: row.transaction_id,
                     customer_id: currentCustomerId,
                     insurance_id: currentInsuranceId,
                     amount: row.amount_paid
@@ -198,7 +187,7 @@ class MigrationService {
 
                 // 3. Sincronización con NoSQL
                 const dataForMongo = this.parseRowsToMongoFormat(rows);
-                await salesService.synchronizeHistories(dataForMongo);
+                await SalesService.synchronizeHistories(dataForMongo);
 
                 console.log("Datos guardados correctamente en SQL y NoSQL.");
 
