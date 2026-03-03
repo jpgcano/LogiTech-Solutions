@@ -1,492 +1,820 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LogiTech Solutions - Business Intelligence Dashboard</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 1.5rem;
-      color: #333;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiTech Solutions - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
 
-    header {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      margin-bottom: 2rem;
-      text-align: center;
-    }
+        .app {
+            display: flex;
+            height: 100vh;
+        }
 
-    header h1 {
-      color: #667eea;
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-    }
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
 
-    header p {
-      color: #666;
-      font-size: 1.1rem;
-    }
+        .sidebar h1 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 1rem;
+        }
 
-    .status-badge {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background: #10b981;
-      color: white;
-      border-radius: 20px;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
+        .nav-group {
+            margin-bottom: 2rem;
+        }
 
-    .status-badge.error {
-      background: #ef4444;
-    }
+        .nav-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            opacity: 0.7;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
 
-    .dashboard {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            text-align: left;
+        }
 
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(4px);
+        }
 
-    .card h2 {
-      color: #667eea;
-      font-size: 1.3rem;
-      margin-bottom: 1rem;
-      border-bottom: 2px solid #e5e7eb;
-      padding-bottom: 0.5rem;
-    }
+        .nav-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+            font-weight: 600;
+        }
 
-    .form-group {
-      margin-bottom: 1rem;
-    }
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    label {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 0.5rem;
-      font-size: 0.95rem;
-    }
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
 
-    select, input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.3s;
-    }
+        .header h2 {
+            color: #667eea;
+            font-size: 1.5rem;
+        }
 
-    select:focus, input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
+        .status-badge {
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
 
-    button {
-      width: 100%;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
+        .status-badge.error {
+            background: #ef4444;
+        }
 
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    }
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
 
-    button:active {
-      transform: translateY(0);
-    }
+        .view {
+            display: none;
+        }
 
-    .results-container {
-      grid-column: 1 / -1;
-    }
+        .view.active {
+            display: block;
+        }
 
-    .results-container h2 {
-      margin-bottom: 1.5rem;
-    }
+        /* Cards and Forms */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
 
-    .table-wrapper {
-      overflow-x: auto;
-    }
+        .card h3 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1rem;
-    }
+        .form-group {
+            margin-bottom: 1rem;
+        }
 
-    thead {
-      background: #f3f4f6;
-    }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
 
-    th {
-      padding: 0.75rem;
-      text-align: left;
-      font-weight: 600;
-      color: #667eea;
-      border-bottom: 2px solid #e5e7eb;
-    }
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
 
-    td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #e5e7eb;
-    }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-    tbody tr:hover {
-      background: #f9fafb;
-    }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
 
-    .json-view {
-      background: #1f2937;
-      color: #10b981;
-      padding: 1.5rem;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.85rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-    .error-message {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      border-left: 4px solid #ef4444;
-    }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
 
-    .loading {
-      text-align: center;
-      color: #667eea;
-      padding: 2rem;
-    }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
 
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #e5e7eb;
-      border-top-color: #667eea;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
 
-    .empty-state {
-      text-align: center;
-      color: #9ca3af;
-      padding: 3rem 1rem;
-    }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
 
-    .empty-state p {
-      font-size: 1.1rem;
-      margin-bottom: 1rem;
-    }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
 
-    .stat-box {
-      background: #f9fafb;
-      padding: 1rem;
-      border-radius: 8px;
-      border-left: 4px solid #667eea;
-    }
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
 
-    .stat-label {
-      color: #6b7280;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-    .stat-value {
-      color: #667eea;
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
+        thead {
+            background: #f3f4f6;
+            border-bottom: 2px solid #e5e7eb;
+        }
 
-    @media (max-width: 768px) {
-      .dashboard {
-        grid-template-columns: 1fr;
-      }
+        th {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #667eea;
+        }
 
-      header h1 {
-        font-size: 1.8rem;
-      }
+        td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
 
-      .results-container {
-        grid-column: 1;
-      }
-    }
-  </style>
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Loading and Messages */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #667eea;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+            margin-bottom: 1rem;
+        }
+
+        .success-message {
+            background: #dcfce7;
+            color: #166534;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #9ca3af;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        @media (max-width: 768px) {
+            .app {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                display: flex;
+                gap: 0.5rem;
+                padding: 1rem;
+                overflow-x: auto;
+            }
+
+            .nav-group {
+                margin-bottom: 0;
+            }
+
+            .nav-group label {
+                display: none;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🚀 LogiTech Solutions</h1>
-      <p>Business Intelligence Dashboard</p>
-      <div id="healthStatus" class="status-badge">Verificando...</div>
-    </header>
+    <div class="app">
+        <div class="sidebar">
+            <h1>🚀 LogiTech</h1>
+            <div class="nav-group">
+                <label>Gestión</label>
+                <button class="nav-btn active" data-view="inventario">📦 Inventario</button>
+                <button class="nav-btn" data-view="clientes">👥 Clientes</button>
+                <button class="nav-btn" data-view="ventas">💰 Ventas</button>
+            </div>
+            <div class="nav-group">
+                <label>Análisis</label>
+                <button class="nav-btn" data-view="reportes">📊 Reportes BI</button>
+            </div>
+            <div class="nav-group">
+                <label>Sistema</label>
+                <button class="nav-btn" id="migrationBtn">🔄 Sincronizar BD</button>
+            </div>
+        </div>
 
-    <div class="dashboard">
-      <div class="card">
-        <h2>📊 Consultas BI</h2>
-        <div class="form-group">
-          <label for="querySelect">Selecciona una consulta:</label>
-          <select id="querySelect">
-            <option value="suppliers">📦 Resumen de Proveedores</option>
-            <option value="customer">👤 Historial de Cliente</option>
-            <option value="top-products">⭐ Top Productos por Categoría</option>
-          </select>
-        </div>
-        <div id="inputArea"></div>
-        <button id="runBtn">▶️ Ejecutar Consulta</button>
-      </div>
+        <div class="main-content">
+            <div class="header">
+                <h2 id="viewTitle">📦 Inventario</h2>
+                <div class="status-badge" id="healthStatus">Verificando...</div>
+            </div>
 
-      <div class="card">
-        <h2>🔧 Operaciones</h2>
-        <div class="form-group">
-          <button id="refreshBtn" style="background: #10b981;">🔄 Actualizar Base de Datos</button>
-        </div>
-        <div class="form-group">
-          <button id="statsBtn" style="background: #f59e0b;">📈 Ver Estadísticas</button>
-        </div>
-        <div class="form-group">
-          <button id="clearBtn" style="background: #ef4444;">🗑️ Limpiar Resultados</button>
-        </div>
-      </div>
+            <div class="content">
+                <div class="view active" id="inventario">
+                    <div class="card">
+                        <h3>Agregar Producto</h3>
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input type="text" id="productSku" placeholder="ej: PROD-001">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" id="productName" placeholder="ej: Laptop ThinkPad">
+                        </div>
+                        <div class="form-group">
+                            <label>Categoría ID</label>
+                            <input type="number" id="productCategory" placeholder="ej: 1">
+                        </div>
+                        <div class="form-group">
+                            <label>Precio Unitario</label>
+                            <input type="number" id="productPrice" placeholder="ej: 599.99" step="0.01">
+                        </div>
+                        <div class="button-group">
+                            <button class="btn-primary" id="addProductBtn">✅ Agregar Producto</button>
+                            <button class="btn-secondary" id="clearProductFormBtn">🗑️ Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Productos</h3>
+                        <div id="productsList"></div>
+                    </div>
+                </div>
 
-      <div class="card results-container">
-        <h2>📋 Resultados</h2>
-        <div id="statsDisplay"></div>
-        <div id="result"></div>
-      </div>
+                <div class="view" id="clientes">
+                    <div class="card">
+                        <h3>Agregar Cliente</h3>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="customerEmail" placeholder="ej: cliente@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" id="customerName" placeholder="ej: Juan Pérez">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="customerPhone" placeholder="ej: +57 300 1234567">
+                        </div>
+                        <div class="form-group">
+                            <label>Dirección</label>
+                            <input type="text" id="customerAddress" placeholder="ej: Calle 123 #45-67">
+                        </div>
+                        <div class="form-group">
+                            <label>Ciudad ID</label>
+                            <input type="number" id="customerCity" placeholder="ej: 1">
+                        </div>
+                        <div class="button-group">
+                            <button class="btn-primary" id="addCustomerBtn">✅ Agregar Cliente</button>
+                            <button class="btn-secondary" id="clearCustomerFormBtn">🗑️ Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Clientes</h3>
+                        <div id="customersList"></div>
+                    </div>
+                </div>
+
+                <div class="view" id="ventas">
+                    <div class="card">
+                        <h3>Nueva Venta</h3>
+                        <div class="form-group">
+                            <label>Email del Cliente</label>
+                            <input type="email" id="saleCustomerEmail" placeholder="ej: cliente@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>SKU Producto</label>
+                            <input type="text" id="saleProductSku" placeholder="ej: PROD-001">
+                        </div>
+                        <div class="form-group">
+                            <label>Cantidad</label>
+                            <input type="number" id="saleQuantity" placeholder="ej: 5" min="1">
+                        </div>
+                        <div class="button-group">
+                            <button class="btn-primary" id="addSaleProductBtn">➕ Agregar a Carrito</button>
+                        </div>
+                        <div id="saleProductsList" style="margin-top: 1.5rem;"></div>
+                        <div class="button-group" style="margin-top: 1.5rem;">
+                            <button class="btn-primary" id="completeSaleBtn">✅ Completar Venta</button>
+                            <button class="btn-secondary" id="clearSaleBtn">🗑️ Cancelar</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Historial de Ventas</h3>
+                        <div id="salesList"></div>
+                    </div>
+                </div>
+
+                <div class="view" id="reportes">
+                    <div class="card">
+                        <h3>📊 Consultas</h3>
+                        <div class="form-group">
+                            <label>Tipo de Reporte:</label>
+                            <select id="reportType">
+                                <option value="suppliers">Resumen de Proveedores</option>
+                                <option value="customer">Historial de Cliente</option>
+                                <option value="top-products">Top Productos por Categoría</option>
+                            </select>
+                        </div>
+                        <div id="reportInputArea"></div>
+                        <div class="button-group">
+                            <button class="btn-primary" id="runReportBtn">▶️ Ejecutar Reporte</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Resultados</h3>
+                        <div id="reportResults"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const base = '/api';
-    const querySelect = document.getElementById('querySelect');
-    const inputArea = document.getElementById('inputArea');
-    const runBtn = document.getElementById('runBtn');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const statsBtn = document.getElementById('statsBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const result = document.getElementById('result');
-    const statsDisplay = document.getElementById('statsDisplay');
-    const healthStatus = document.getElementById('healthStatus');
+    <script>
+        const API_BASE = '/api';
+        let currentView = 'inventario';
+        let saleCart = [];
 
-    // Verificar salud de la API
-    async function checkHealth() {
-      try {
-        const resp = await fetch(`${base}/health`);
-        if (resp.ok) {
-          healthStatus.textContent = '✅ API Conectada';
-          healthStatus.classList.remove('error');
-        } else {
-          healthStatus.textContent = '❌ API No disponible';
-          healthStatus.classList.add('error');
+        async function apiFetch(url, method = 'GET', body = null) {
+            const options = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) options.body = JSON.stringify(body);
+            try {
+                const response = await fetch(`${API_BASE}${url}`, options);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+                return { ok: true, data, status: response.status };
+            } catch (error) {
+                return { ok: false, error: error.message };
+            }
         }
-      } catch {
-        healthStatus.textContent = '❌ API No disponible';
-        healthStatus.classList.add('error');
-      }
-    }
 
-    // Actualizar campos de entrada según la consulta
-    function updateInput() {
-      const v = querySelect.value;
-      if (v === 'customer') {
-        inputArea.innerHTML = `
-          <div class="form-group">
-            <label for="email">Email del Cliente:</label>
-            <input id="email" placeholder="ej: andres.lopez@gmail.com" value="andres.lopez@gmail.com"/>
-          </div>
-        `;
-      } else if (v === 'top-products') {
-        inputArea.innerHTML = `
-          <div class="form-group">
-            <label for="category">Categoría:</label>
-            <input id="category" placeholder="ej: Electronics" value="Electronics"/>
-          </div>
-        `;
-      } else {
-        inputArea.innerHTML = '';
-      }
-    }
-
-    // Renderizar datos en tabla
-    function renderTable(data) {
-      if (!Array.isArray(data) || data.length === 0) {
-        return renderJSON(data);
-      }
-
-      const keys = Object.keys(data[0]);
-      const thead = `<thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead>`;
-      const tbody = `<tbody>${data.map(row => 
-        `<tr>${keys.map(k => `<td>${formatValue(row[k])}</td>`).join('')}</tr>`
-      ).join('')}</tbody>`;
-
-      return `<div class="table-wrapper"><table>${thead}${tbody}</table></div>`;
-    }
-
-    // Formatear valores en tabla
-    function formatValue(val) {
-      if (typeof val === 'object') return JSON.stringify(val);
-      if (typeof val === 'number') return val.toLocaleString();
-      return val || '-';
-    }
-
-    // Renderizar JSON
-    function renderJSON(data) {
-      return `<div class="json-view">${JSON.stringify(data, null, 2)}</div>`;
-    }
-
-    // Ejecutar consulta
-    runBtn.addEventListener('click', async () => {
-      let url = '';
-      const v = querySelect.value;
-      
-      if (v === 'suppliers') url = `${base}/bi/suppliers-summary`;
-      if (v === 'customer') {
-        const email = document.getElementById('email').value;
-        if (!email) {
-          result.innerHTML = '<div class="error-message">❌ Por favor ingresa un email</div>';
-          return;
+        async function checkHealth() {
+            const result = await apiFetch('/health');
+            const healthBadge = document.getElementById('healthStatus');
+            healthBadge.textContent = result.ok ? '✅ API Conectada' : '❌ Sin conexión';
+            healthBadge.classList.toggle('error', !result.ok);
         }
-        url = `${base}/bi/customer-history/${encodeURIComponent(email)}`;
-      }
-      if (v === 'top-products') {
-        const cat = document.getElementById('category').value;
-        if (!cat) {
-          result.innerHTML = '<div class="error-message">❌ Por favor ingresa una categoría</div>';
-          return;
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.view) switchView(btn.dataset.view);
+            });
+        });
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(viewName).classList.add('active');
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+            const titles = { inventario: '📦 Inventario', clientes: '👥 Clientes', ventas: '💰 Ventas', reportes: '📊 Reportes BI' };
+            document.getElementById('viewTitle').textContent = titles[viewName];
+            if (viewName === 'inventario') loadProducts();
+            if (viewName === 'clientes') loadCustomers();
+            if (viewName === 'ventas') loadSales();
         }
-        url = `${base}/bi/top-products-by-category/${encodeURIComponent(cat)}`;
-      }
 
-      result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-      statsDisplay.innerHTML = '';
+        async function loadProducts() {
+            const list = document.getElementById('productsList');
+            list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            const result = await apiFetch('/Products');
+            if (!result.ok) {
+                list.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                return;
+            }
+            const products = result.data;
+            if (!products.length) {
+                list.innerHTML = '<div class="empty-state"><p>📭 Sin productos</p></div>';
+                return;
+            }
+            list.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acciones</th></tr></thead><tbody>${products.map(p => `<tr><td>${p.product_sku}</td><td>${p.product_name}</td><td>${p.category_name || p.product_category}</td><td>$${parseFloat(p.unit_price).toFixed(2)}</td><td><div class="table-actions"><button class="btn-secondary btn-small" onclick="editProduct('${p.product_sku}')">✏️ Editar</button><button class="btn-danger btn-small" onclick="deleteProduct('${p.product_sku}')">🗑️ Eliminar</button></div></td></tr>`).join('')}</tbody></table></div>`;
+        }
 
-      try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Error ${resp.status}`);
-        const data = await resp.json();
-        result.innerHTML = renderTable(data);
-      } catch (err) {
-        result.innerHTML = `<div class="error-message">❌ Error: ${err.message}</div>`;
-      }
-    });
+        document.getElementById('addProductBtn').addEventListener('click', async () => {
+            const sku = document.getElementById('productSku').value;
+            const name = document.getElementById('productName').value;
+            const categoryId = document.getElementById('productCategory').value;
+            const unitPrice = document.getElementById('productPrice').value;
+            if (!sku || !name || !categoryId || !unitPrice) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+            const result = await apiFetch('/Products', 'POST', { sku, name, categoryId: parseInt(categoryId), unitPrice: parseFloat(unitPrice) });
+            if (result.ok) {
+                document.getElementById('productSku').value = '';
+                document.getElementById('productName').value = '';
+                document.getElementById('productCategory').value = '';
+                document.getElementById('productPrice').value = '';
+                loadProducts();
+                showMessage('✅ Producto agregado', 'success');
+            } else {
+                showMessage(`❌ Error: ${result.error}`, 'error');
+            }
+        });
 
-    // Actualizar base de datos
-    refreshBtn.addEventListener('click', async () => {
-      refreshBtn.disabled = true;
-      refreshBtn.textContent = '⏳ Migrando...';
-      try {
-        const resp = await fetch(`${base}/migrate`, { method: 'POST' });
-        const data = await resp.json();
-        result.innerHTML = `<div style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">✅ Migración completada: ${data.message || 'OK'}</div>`;
-      } catch (err) {
-        result.innerHTML = `<div class="error-message">❌ Error en migración: ${err.message}</div>`;
-      } finally {
-        refreshBtn.disabled = false;
-        refreshBtn.textContent = '🔄 Actualizar Base de Datos';
-      }
-    });
+        async function deleteProduct(sku) {
+            if (!confirm('¿Eliminar este producto?')) return;
+            const result = await apiFetch(`/Products/${sku}`, 'DELETE');
+            if (result.ok) {
+                loadProducts();
+                showMessage('✅ Producto eliminado', 'success');
+            } else {
+                showMessage(`❌ Error: ${result.error}`, 'error');
+            }
+        }
 
-    // Ver estadísticas
-    statsBtn.addEventListener('click', async () => {
-      statsDisplay.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-      try {
-        const [suppliers, categories] = await Promise.all([
-          fetch(`${base}/bi/suppliers-summary`).then(r => r.json()),
-          fetch(`${base}/bi/top-products-by-category/Electronics`).then(r => r.json())
-        ]);
+        document.getElementById('clearProductFormBtn').addEventListener('click', () => {
+            document.getElementById('productSku').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productCategory').value = '';
+            document.getElementById('productPrice').value = '';
+        });
 
-        const supplierData = Array.isArray(suppliers) ? suppliers : [];
-        const categoryData = Array.isArray(categories) ? categories : [];
+        async function loadCustomers() {
+            const list = document.getElementById('customersList');
+            list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            const result = await apiFetch('/Customers');
+            if (!result.ok) {
+                list.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                return;
+            }
+            const customers = result.data;
+            if (!customers.length) {
+                list.innerHTML = '<div class="empty-state"><p>📭 Sin clientes</p></div>';
+                return;
+            }
+            list.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Email</th><th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Acciones</th></tr></thead><tbody>${customers.map(c => `<tr><td>${c.customer_email}</td><td>${c.customer_name}</td><td>${c.customer_phone || '-'}</td><td>${c.customer_address || '-'}</td><td><div class="table-actions"><button class="btn-secondary btn-small" onclick="editCustomer('${c.customer_email}')">✏️ Editar</button><button class="btn-danger btn-small" onclick="deleteCustomer('${c.customer_email}')">🗑️ Eliminar</button></div></td></tr>`).join('')}</tbody></table></div>`;
+        }
 
-        const supplierCount = supplierData.length;
-        const totalValue = supplierData.reduce((sum, s) => sum + (s.total_inventory_value || s.total_value || 0), 0);
-        const productCount = categoryData.length;
+        document.getElementById('addCustomerBtn').addEventListener('click', async () => {
+            const email = document.getElementById('customerEmail').value;
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const address = document.getElementById('customerAddress').value;
+            const city = document.getElementById('customerCity').value;
+            if (!email || !name) {
+                alert('Email y nombre son obligatorios');
+                return;
+            }
+            const result = await apiFetch('/Customers', 'POST', { customer_email: email, customer_name: name, customer_phone: phone || null, customer_address: address || null, city: city ? parseInt(city) : null });
+            if (result.ok) {
+                document.getElementById('customerEmail').value = '';
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerPhone').value = '';
+                document.getElementById('customerAddress').value = '';
+                document.getElementById('customerCity').value = '';
+                loadCustomers();
+                showMessage('✅ Cliente agregado', 'success');
+            } else {
+                showMessage(`❌ Error: ${result.error}`, 'error');
+            }
+        });
 
-        statsDisplay.innerHTML = `
-          <div class="stats-grid">
-            <div class="stat-box">
-              <div class="stat-label">Proveedores</div>
-              <div class="stat-value">${supplierCount}</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">Productos (Top)</div>
-              <div class="stat-value">${productCount}</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">Valor Total</div>
-              <div class="stat-value">$${(totalValue / 1000).toFixed(1)}K</div>
-            </div>
-          </div>
-        `;
-      } catch (err) {
-        statsDisplay.innerHTML = `<div class="error-message">❌ Error: ${err.message}</div>`;
-      }
-    });
+        async function deleteCustomer(email) {
+            if (!confirm('¿Eliminar este cliente?')) return;
+            const result = await apiFetch(`/Customers/${email}`, 'DELETE');
+            if (result.ok) {
+                loadCustomers();
+                showMessage('✅ Cliente eliminado', 'success');
+            } else {
+                showMessage(`❌ Error: ${result.error}`, 'error');
+            }
+        }
 
-    // Limpiar resultados
-    clearBtn.addEventListener('click', () => {
-      result.innerHTML = '<div class="empty-state"><p>📭 Resultados limpios</p></div>';
-      statsDisplay.innerHTML = '';
-    });
+        document.getElementById('clearCustomerFormBtn').addEventListener('click', () => {
+            document.getElementById('customerEmail').value = '';
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('customerAddress').value = '';
+            document.getElementById('customerCity').value = '';
+        });
 
-    // Eventos
-    querySelect.addEventListener('change', updateInput);
-    updateInput();
-    checkHealth();
-    
-    // Verificar salud cada 30 segundos
-    setInterval(checkHealth, 30000);
+        async function loadSales() {
+            const list = document.getElementById('salesList');
+            list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            const result = await apiFetch('/Sales');
+            if (!result.ok) {
+                list.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                return;
+            }
+            const sales = result.data;
+            if (!sales.length) {
+                list.innerHTML = '<div class="empty-state"><p>📭 Sin ventas</p></div>';
+                return;
+            }
+            list.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>ID Transacción</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Artículos</th></tr></thead><tbody>${sales.map(s => `<tr><td><small>${s.transaction_id.substring(0, 8)}...</small></td><td>${s.customer_email}</td><td>${s.datesale}</td><td>$${parseFloat(s.total).toFixed(2)}</td><td><span class="badge badge-success">${s.items_count}</span></td></tr>`).join('')}</tbody></table></div>`;
+        }
 
-    // Mensaje inicial
-    result.innerHTML = '<div class="empty-state"><p>👈 Selecciona una consulta para comenzar</p></div>';
-  </script>
+        document.getElementById('addSaleProductBtn').addEventListener('click', () => {
+            const sku = document.getElementById('saleProductSku').value;
+            const quantity = document.getElementById('saleQuantity').value;
+            if (!sku || !quantity) {
+                alert('Por favor completa SKU y cantidad');
+                return;
+            }
+            saleCart.push({ sku, quantity: parseInt(quantity) });
+            document.getElementById('saleProductSku').value = '';
+            document.getElementById('saleQuantity').value = '';
+            updateSaleCart();
+        });
+
+        function updateSaleCart() {
+            const cartDiv = document.getElementById('saleProductsList');
+            if (saleCart.length === 0) {
+                cartDiv.innerHTML = '<p style="color: #9ca3af;">Carrito vacío</p>';
+                return;
+            }
+            cartDiv.innerHTML = `<div style="background: #f9fafb; padding: 1rem; border-radius: 8px;"><h4 style="color: #667eea; margin-bottom: 1rem;">Artículos en Carrito:</h4>${saleCart.map((item, i) => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;"><span><strong>${item.sku}</strong> x ${item.quantity}</span><button class="btn-danger btn-small" onclick="removeFromCart(${i})">Eliminar</button></div>`).join('')}</div>`;
+        }
+
+        function removeFromCart(index) {
+            saleCart.splice(index, 1);
+            updateSaleCart();
+        }
+
+        document.getElementById('completeSaleBtn').addEventListener('click', async () => {
+            const email = document.getElementById('saleCustomerEmail').value;
+            if (!email || saleCart.length === 0) {
+                alert('Por favor completa email y agrega productos');
+                return;
+            }
+            const result = await apiFetch('/Sales', 'POST', { customer_email: email, products: saleCart });
+            if (result.ok) {
+                document.getElementById('saleCustomerEmail').value = '';
+                saleCart = [];
+                updateSaleCart();
+                loadSales();
+                showMessage('✅ Venta registrada', 'success');
+            } else {
+                showMessage(`❌ Error: ${result.error}`, 'error');
+            }
+        });
+
+        document.getElementById('clearSaleBtn').addEventListener('click', () => {
+            document.getElementById('saleCustomerEmail').value = '';
+            saleCart = [];
+            updateSaleCart();
+        });
+
+        document.getElementById('migrationBtn').addEventListener('click', async () => {
+            if (!confirm('¿Sincronizar base de datos?')) return;
+            const btn = document.getElementById('migrationBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Sincronizando...';
+            const result = await apiFetch('/migrate', 'POST');
+            btn.disabled = false;
+            btn.textContent = '🔄 Sincronizar BD';
+            if (result.ok) {
+                showMessage('✅ Sincronización completada', 'success');
+                loadProducts();
+                loadCustomers();
+                loadSales();
+            } else {
+                showMessage(`❌ Error: ${result.error}`, 'error');
+            }
+        });
+
+        const reportTypeSelect = document.getElementById('reportType');
+        const reportInputArea = document.getElementById('reportInputArea');
+        reportTypeSelect.addEventListener('change', updateReportInputs);
+
+        function updateReportInputs() {
+            const type = reportTypeSelect.value;
+            if (type === 'customer') {
+                reportInputArea.innerHTML = '<div class="form-group"><label>Email del Cliente:</label><input type="email" id="reportCustomerEmail" placeholder="ej: cliente@example.com"></div>';
+            } else if (type === 'top-products') {
+                reportInputArea.innerHTML = '<div class="form-group"><label>Categoría:</label><input type="text" id="reportCategory" placeholder="ej: Electronics"></div>';
+            } else {
+                reportInputArea.innerHTML = '';
+            }
+        }
+
+        document.getElementById('runReportBtn').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('reportResults');
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            let url = '';
+            const type = reportTypeSelect.value;
+            if (type === 'suppliers') {
+                url = '/bi/suppliers-summary';
+            } else if (type === 'customer') {
+                const email = document.getElementById('reportCustomerEmail')?.value;
+                if (!email) {
+                    resultsDiv.innerHTML = '<div class="error-message">Por favor ingresa un email</div>';
+                    return;
+                }
+                url = `/bi/customer-history/${encodeURIComponent(email)}`;
+            } else if (type === 'top-products') {
+                const cat = document.getElementById('reportCategory')?.value;
+                if (!cat) {
+                    resultsDiv.innerHTML = '<div class="error-message">Por favor ingresa una categoría</div>';
+                    return;
+                }
+                url = `/bi/top-products-by-category/${encodeURIComponent(cat)}`;
+            }
+            const result = await apiFetch(url);
+            if (!result.ok) {
+                resultsDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                return;
+            }
+            const data = result.data;
+            if (Array.isArray(data) && data.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-state"><p>📭 Sin resultados</p></div>';
+                return;
+            }
+            resultsDiv.innerHTML = Array.isArray(data) ? renderTable(data) : renderJSON(data);
+        });
+
+        function renderTable(data) {
+            const keys = Object.keys(data[0]);
+            return `<div class="table-wrapper"><table><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>${data.map(row => `<tr>${keys.map(k => `<td>${formatValue(row[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+        }
+
+        function formatValue(val) {
+            if (typeof val === 'object') return JSON.stringify(val);
+            if (typeof val === 'number') return val.toLocaleString();
+            return val || '-';
+        }
+
+        function renderJSON(data) {
+            return `<pre style="background: #1f2937; color: #10b981; padding: 1.5rem; border-radius: 8px; overflow-x: auto;">${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        function showMessage(message, type = 'success') {
+            const className = type === 'success' ? 'success-message' : 'error-message';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = className;
+            msgDiv.textContent = message;
+            const content = document.querySelector('.content');
+            content.insertBefore(msgDiv, content.firstChild);
+            setTimeout(() => msgDiv.remove(), 3000);
+        }
+
+        checkHealth();
+        setInterval(checkHealth, 30000);
+        updateReportInputs();
+    </script>
 </body>
 </html>

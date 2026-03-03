@@ -2,12 +2,14 @@ import express from 'express';
 import helmet from 'helmet'; //Helmet es un middleware para Express.js que mejora automáticamente la seguridad de tu aplicación Node.js configurando diversos encabezados HTTP 
 import rateLimit from 'express-rate-limit';
 import router from './router/router.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 class App {
   constructor() {
     this.server = express();
     this.middlewares();
     this.routes();  
+    this.errorHandling();
   }
 
   middlewares(){
@@ -41,6 +43,14 @@ class App {
     });
     // aqui colocar las rutas de la aplicación, por ejemplo:
     this.server.use('/api', router);
+  }
+
+  errorHandling(){
+    // Global error handler - must be after all routes
+    this.server.use(errorHandler);
+    
+    // 404 Not Found handler - must be last
+    this.server.use(notFoundHandler);
   }
 
 }

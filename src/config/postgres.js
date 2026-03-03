@@ -25,6 +25,16 @@ class PostgresDB {
             }
         }
     }
+    // Metodo para obtener un cliente (para transacciones)
+    async getClient() {
+        try {
+            return await this.pool.connect();
+        } catch (error) {
+            console.error(`Error al obtener cliente de PostgreSQL: ${error}`);
+            throw error;
+        }
+    }
+
     // Metodo para ejecutar consultas SQL
     async query(text, params) {
         try {

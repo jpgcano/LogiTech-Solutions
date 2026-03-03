@@ -3,8 +3,17 @@ import MigrationService from "../services/MigrationService.js";
 import SuppliersService from "../services/SuppliersService.js";
 import ProductService from "../services/ProductService.js";
 import SalesService from "../services/salesServices.js";
+import CustomerService from "../services/CustomerService.js";
 import AuditService from "../services/AuditService.js";
 import postgresDB from "../config/postgres.js";
+import { 
+    validateCustomerCreation, 
+    validateCustomerUpdate,
+    validateProductCreation, 
+    validateProductUpdate,
+    validateSaleCreation,
+    validateSupplierCreation 
+} from "../middleware/validator.js";
 import { z } from 'zod';
 
 // validation schemas
@@ -26,6 +35,29 @@ const productUpdateSchema = z.object({
     unitPrice: z.number().nonnegative().optional(),
 });
 
+const customerSchema = z.object({
+    customer_email: z.string().email(),
+    customer_name: z.string().min(1),
+    customer_phone: z.string().optional(),
+    customer_address: z.string().optional(),
+    city: z.number().int().optional(),
+});
+
+const customerUpdateSchema = z.object({
+    customer_name: z.string().min(1).optional(),
+    customer_phone: z.string().optional(),
+    customer_address: z.string().optional(),
+    city: z.number().int().optional(),
+});
+
+const saleSchema = z.object({
+    customer_email: z.string().email(),
+    products: z.array(z.object({
+        sku: z.string().min(1),
+        quantity: z.number().int().positive(),
+    }))
+});
+
 const router = Router();
 
 router.post('/migrate', async (req, res) => {try {
@@ -39,6 +71,63 @@ router.post('/migrate', async (req, res) => {try {
             error: "Hubo un error al ejecutar la migración",
             detalle: error.message 
         });
+    }
+});
+
+// ========== CUSTOMERS CRUD ==========
+
+router.get('/Customers', async (req, res) => {
+    try {
+        const customers = await CustomerService.getCustomers();
+        res.status(200).json(customers);
+    } catch (error) {
+        console.error('Error getting customers:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+router.post('/Customers', validateCustomerCreation, async (req, res) => {
+    try {
+        const parse = customerSchema.safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
+        }
+        const customer = await CustomerService.createCustomer(parse.data);
+        res.status(201).json(customer);
+    } catch (error) {
+        console.error('Error creating customer:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+router.put('/Customers/:email', validateCustomerUpdate, async (req, res) => {
+    try {
+        const email = req.params.email;
+        const parse = customerUpdateSchema.safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
+        }
+        const updated = await CustomerService.updateCustomerByEmail(email, parse.data);
+        if (!updated) return res.status(404).json({ ok: false, error: 'Customer not found' });
+        await AuditService.logUpdate('Customer', email, { before: null, after: parse.data }, req.user?.email || 'system');
+        res.status(200).json(updated);
+    } catch (error) {
+        console.error('Error updating customer:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+router.delete('/Customers/:email', async (req, res) => {
+    try {
+        const email = req.params.email;
+        const existing = await CustomerService.getCustomerByEmail(email);
+        if (!existing) return res.status(404).json({ ok: false, error: 'Customer not found' });
+        const deleted = await CustomerService.deleteCustomerByEmail(email, req.user?.email || 'system');
+        await AuditService.logDeletion('Customer', email, deleted, req.user?.email || 'system');
+        res.status(200).json({ ok: true, deleted });
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        res.status(500).json({ ok: false, error: error.message });
     }
 });
 
@@ -165,6 +254,66 @@ router.delete('/Products/:sku', async (req, res) => {
         res.status(200).json({ ok: true, deleted });
     } catch (error) {
         console.error('Error deleting product:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ========== SALES CRUD ==========
+
+router.get('/Sales', async (req, res) => {
+    try {
+        const sales = await SalesService.getSales();
+        res.status(200).json(sales);
+    } catch (error) {
+        console.error('Error getting sales:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+router.get('/Sales/:transactionId', async (req, res) => {
+    try {
+        const transactionId = req.params.transactionId;
+        const sale = await SalesService.getSaleById(transactionId);
+        if (!sale || sale.length === 0) {
+            return res.status(404).json({ ok: false, error: 'Sale not found' });
+        }
+        
+        // Structure the response
+        const firstRow = sale[0];
+        const response = {
+            transaction_id: firstRow.transaction_id,
+            customer_email: firstRow.customer_email,
+            customer_name: firstRow.customer_name,
+            date: firstRow.datesale,
+            total: parseFloat(firstRow.total),
+            items: sale
+                .filter(row => row.product_sku)
+                .map(row => ({
+                    product_sku: row.product_sku,
+                    product_name: row.product_name,
+                    quantity: row.quantity,
+                    unit_price: parseFloat(row.unit_price),
+                    subtotal: parseFloat(row.sub_total)
+                }))
+        };
+        
+        res.status(200).json(response);
+    } catch (error) {
+        console.error('Error getting sale:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+router.post('/Sales', validateSaleCreation, async (req, res) => {
+    try {
+        const parse = saleSchema.safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
+        }
+        const sale = await SalesService.createSale(parse.data);
+        res.status(201).json(sale);
+    } catch (error) {
+        console.error('Error creating sale:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });

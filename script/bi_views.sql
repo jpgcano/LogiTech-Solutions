@@ -55,12 +55,36 @@ CREATE OR REPLACE VIEW customer_transaction_lines_view AS
 SELECT
   cu.customer_id,
   cu.customer_email,
+  cu.customer_name,
   sa.transaction_id AS transaction_id,
   sa.datesale,
   sp.product_sku,
+  p.product_name,
   sp.amount AS quantity,
+  p.unit_price,
   sp.sub_total AS line_total
 FROM customer cu
 JOIN sale sa ON cu.customer_id = sa.customer
 JOIN sale_product sp ON sa.transaction_id = sp.sale
+LEFT JOIN product p ON sp.product_sku = p.product_sku
 ORDER BY cu.customer_id, sa.datesale DESC;
+
+/*
+  customer_totals_view:
+  - Resumen por cliente: número de transacciones, cantidad total de items, gasto total
+  - Incluye customer_email para identificación
+  - Útil para segmentación de clientes por valor y actividad
+*/
+CREATE OR REPLACE VIEW customer_totals_view AS
+SELECT
+  cu.customer_id,
+  cu.customer_email,
+  cu.customer_name,
+  COUNT(DISTINCT sa.transaction_id) AS total_transactions,
+  COALESCE(SUM(sp.amount), 0) AS total_items_purchased,
+  COALESCE(SUM(sa.total), 0) AS total_spent
+FROM customer cu
+LEFT JOIN sale sa ON cu.customer_id = sa.customer
+LEFT JOIN sale_product sp ON sa.transaction_id = sp.sale
+GROUP BY cu.customer_id, cu.customer_email, cu.customer_name
+ORDER BY total_spent DESC;

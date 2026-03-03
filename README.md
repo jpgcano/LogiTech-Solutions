@@ -261,18 +261,52 @@ Install Node.js 18+, pnpm (optional) and Docker. Then run `pnpm install`.
 
 Base URL: `http://localhost:3000/api`
 
-Health: `GET /api/health`
+### Health Check
+- `GET /api/health` — API health status
 
-Migration: `POST /api/migrate` (idempotent)
+### Migration
+- `POST /api/migrate` — Initialize database (idempotent, clears and reloads from CSV)
 
-Products CRUD: `/api/Products` (GET, POST), `/api/Products/:sku` (GET, PUT, DELETE)
+### Products CRUD
+- `GET /api/Products` — List all products
+- `GET /api/Products/:sku` — Get product by SKU
+- `POST /api/Products` — Create new product (validates SKU uniqueness)
+- `PUT /api/Products/:sku` — Update product (price, name, category)
+- `DELETE /api/Products/:sku` — Delete product (prevents deletion if referenced by sales)
 
-Suppliers CRUD: `/api/Suppliers` (GET, POST), `/api/Suppliers/:email` (PUT, DELETE)
+### Customers CRUD
+- `GET /api/Customers` — List all customers
+- `GET /api/Customers/:email` — Get customer by email
+- `POST /api/Customers` — Create new customer (validates email uniqueness)
+- `PUT /api/Customers/:email` — Update customer (address, city, phone, name)
+- `DELETE /api/Customers/:email` — Delete customer (prevents deletion if has associated sales)
 
-BI endpoints:
-- `GET /api/bi/suppliers-summary`
-- `GET /api/bi/customer-history/:email`
-- `GET /api/bi/top-products-by-category/:category`
+### Suppliers CRUD
+- `GET /api/Suppliers` — List all suppliers
+- `POST /api/Suppliers` — Create new supplier
+- `PUT /api/Suppliers/:email` — Update supplier
+- `DELETE /api/Suppliers/:email` — Delete supplier
+
+### Sales Management
+- `GET /api/Sales` — List all sales transactions
+- `GET /api/Sales/:transactionId` — Get sales details for a transaction
+- `POST /api/Sales` — Create new sale (SQL transaction - inserts into sale and sale_product atomically, then syncs to MongoDB)
+
+**Sale Creation Request Body:**
+```json
+{
+  "customer_email": "customer@example.com",
+  "products": [
+    { "sku": "PROD-001", "quantity": 2 },
+    { "sku": "PROD-002", "quantity": 1 }
+  ]
+}
+```
+
+### Business Intelligence (BI)
+- `GET /api/bi/suppliers-summary` — Suppliers ranked by total inventory value and items supplied
+- `GET /api/bi/customer-history/:email` — Customer purchase history with transaction lines and totals
+- `GET /api/bi/top-products-by-category/:category` — Top products in category ordered by revenue
 
 ---
 
