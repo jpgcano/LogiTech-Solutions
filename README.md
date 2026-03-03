@@ -207,25 +207,43 @@ This section walks you through two common ways to get the project running:
 
 ### 2. Docker (one command)
 
-A script and npm shortcut automate the whole process:
+If you want to start the **full stack** (DB + API + Frontend), run:
 
-1. Ensure Docker is installed on your machine.
-2. From the project root run:
-   ```bash
-   pnpm run docker:quick
-   ```
+```bash
+./start_stack.sh
+```
 
-   This will:
-   - start Postgres and MongoDB containers named `slogitech_v2` and `mongo_logitech_v2`
-   - build a Docker image for the Node.js app
-   - run the migration inside a temporary container
-   - finally launch the API container listening on port 3000
+#### What does this command do?
 
-3. The API and frontend are now reachable at `http://localhost:3000`.
-4. To stop everything, press `Ctrl+C` in the terminal where `docker:quick` is running (it uses host networking so it stops containers automatically), or kill them manually:
-   ```bash
-   docker kill slogitech_v2 mongo_logitech_v2 logitech_app
-   ```
+- Creates the Docker network `logitech_network` (if it does not exist).
+- Creates or starts (if they already exist) these containers:
+  - `logitech_postgres`
+  - `logitech_mongo`
+  - `logitech_api`
+  - `logitech_web`
+- Reconnects existing containers to the shared network if needed.
+- Exposes default ports:
+  - API: `http://localhost:3000`
+  - Frontend: `http://localhost:8080`
+
+#### Idempotent behavior
+
+You can run `./start_stack.sh` multiple times.
+If the containers already exist, it **does not recreate them**: it just starts and reuses them.
+
+#### Optional variables
+
+You can override ports/credentials before running the script:
+
+```bash
+PG_HOST_PORT=5432 MONGO_HOST_PORT=27017 API_HOST_PORT=3000 WEB_HOST_PORT=8080 DB_PASSWORD=123456 ./start_stack.sh
+```
+
+#### Stop the stack
+
+```bash
+docker stop logitech_web logitech_api logitech_mongo logitech_postgres
+```
 
 
 ### 3. Alternative: Docker Compose
@@ -239,7 +257,7 @@ This is equivalent to `docker-compose up --build` and leaves containers running 
 
 ## Frontend
 
-A minimal browser frontend is available in the `frontend/` directory. When the server is running, navigate to `http://localhost:3000/` and you can execute the BI queries via a simple form. This is served automatically by Express as static content.
+A minimal browser frontend is available in the `client/` directory. When the containers are running, open `http://localhost:8080/` to use the BI form UI.
 
 ---
 
