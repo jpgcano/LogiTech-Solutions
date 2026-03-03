@@ -20,6 +20,13 @@ class ProductService {
 
     // Create product
     async createProduct(sku, name, categoryId, unitPrice) {
+        if (!sku || !name || !categoryId || unitPrice === undefined) {
+            throw new Error('Missing required product fields');
+        }
+        // avoid duplicate SKU
+        const existing = await this.getProductBySku(sku);
+        if (existing) return existing;
+
         const res = await this.db.query('INSERT INTO product (product_sku, product_name, product_category, unit_price) VALUES ($1, $2, $3, $4) RETURNING *', [sku, name, categoryId, unitPrice]);
         return res.rows[0];
     }
@@ -60,7 +67,16 @@ class ProductService {
         const existing = await this.getProductBySku(sku);
         if (!existing) return null;
 
-        await this.db.query('DELETE FROM product WHERE product_sku = $1', [sku]);
+        try {
+            await this.db.query('DELETE FROM product WHERE product_sku = $1', [sku]);
+        } catch (err) {
+            // handle foreign key violations
+            if (err.code === '23503') {
+                throw new Error('Cannot delete product; it is referenced by other records');
+            }
+            throw err;
+        }
+
         await AuditService.logDeletion('Product', sku, existing, performedBy);
         return existing;
     }

@@ -10,6 +10,38 @@ class MigrationService {
         this.db = postgresDB;
     }
 
+    // helper para buscar o insertar en tablas simples (ciudad, categoría, proveedor, etc.)
+    async getOrCreateEntity(tableName, keyColumn, keyValue, map, additionalData = {}) {
+        if (map.has(keyValue)) {
+            return map.get(keyValue);
+        }
+
+        const res = await this.db.query(
+            `SELECT * FROM ${tableName} WHERE ${keyColumn} = $1`,
+            [keyValue]
+        );
+
+        if (res.rows.length) {
+            const row = res.rows[0];
+            const id = row[`${tableName}_id`] || row[`${tableName}_Id`];
+            map.set(keyValue, id);
+            return id;
+        }
+
+        // construir la sentencia INSERT con columnas adicionales si las hay
+        const cols = [keyColumn, ...Object.keys(additionalData)];
+        const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
+        const vals = [keyValue, ...Object.values(additionalData)];
+
+        const ins = await this.db.query(
+            `INSERT INTO ${tableName} (${cols.join(',')}) VALUES (${placeholders}) RETURNING *`,
+            vals
+        );
+        const newId = ins.rows[0][`${tableName}_id`] || ins.rows[0][`${tableName}_Id`];
+        map.set(keyValue, newId);
+        return newId;
+    }
+
     async migrate(clearBefore = false) {
         try {
             console.log("Iniciando migración de datos...");
@@ -78,7 +110,6 @@ class MigrationService {
         const cityMap = new Map();
         const productMap = new Map();
         const customerMap = new Map();
-        const saleTotals = new Map();
 
         console.log(" Insertando entidades únicas en PostgreSQL...");
         try {
@@ -105,40 +136,29 @@ class MigrationService {
                 const cityName = (customerAddress || '').split(' ').slice(-1)[0] || 'Unknown';
 
                 // category
-                if (!categoryMap.has(productCategory)) {
-                    const res = await this.db.query('SELECT category_id FROM category WHERE category_name = $1', [productCategory]);
-                    if (res.rows.length) {
-                        categoryMap.set(productCategory, res.rows[0].category_id);
-                    } else {
-                        const ins = await this.db.query('INSERT INTO category (category_name) VALUES ($1) RETURNING category_id', [productCategory]);
-                        categoryMap.set(productCategory, ins.rows[0].category_id);
-                    }
-                }
-                const categoryId = categoryMap.get(productCategory);
+                const categoryId = await this.getOrCreateEntity(
+                    'category',
+                    'category_name',
+                    productCategory,
+                    categoryMap
+                );
 
-                // supplier
-                if (!supplierMap.has(supplierEmail)) {
-                    const res = await this.db.query('SELECT supplier_id FROM supplier WHERE supplier_email = $1', [supplierEmail]);
-                    if (res.rows.length) {
-                        supplierMap.set(supplierEmail, res.rows[0].supplier_id);
-                    } else {
-                        const ins = await this.db.query('INSERT INTO supplier (supplier_name, supplier_email) VALUES ($1, $2) RETURNING supplier_id', [supplierName, supplierEmail]);
-                        supplierMap.set(supplierEmail, ins.rows[0].supplier_id);
-                    }
-                }
-                const supplierId = supplierMap.get(supplierEmail);
+                // supplier (uses both email and name)
+                const supplierId = await this.getOrCreateEntity(
+                    'supplier',
+                    'supplier_email',
+                    supplierEmail,
+                    supplierMap,
+                    { supplier_name: supplierName }
+                );
 
                 // city
-                if (!cityMap.has(cityName)) {
-                    const res = await this.db.query('SELECT city_Id FROM city WHERE specialty = $1', [cityName]);
-                    if (res.rows.length) {
-                        cityMap.set(cityName, res.rows[0].city_id || res.rows[0].city_Id);
-                    } else {
-                        const ins = await this.db.query('INSERT INTO city (specialty) VALUES ($1) RETURNING city_Id', [cityName]);
-                        cityMap.set(cityName, ins.rows[0].city_Id);
-                    }
-                }
-                const cityId = cityMap.get(cityName);
+                const cityId = await this.getOrCreateEntity(
+                    'city',
+                    'specialty',
+                    cityName,
+                    cityMap
+                );
 
                 // customer
                 if (!customerMap.has(customerEmail)) {
@@ -170,21 +190,13 @@ class MigrationService {
                 }
 
                 // ensure sale row exists (insert placeholder if missing) to satisfy FK
-                if (!saleTotals.has(transactionId)) saleTotals.set(transactionId, { total: 0, date, customerId });
-                saleTotals.get(transactionId).total += totalLineValue;
-
                 const saleExists = await this.db.query('SELECT transaction_id FROM sale WHERE transaction_id = $1', [transactionId]);
                 if (!saleExists.rows.length) {
                     await this.db.query('INSERT INTO sale (transaction_id, datesale, customer, total) VALUES ($1, $2, $3, $4)', [transactionId, date, customerId, 0]);
                 }
 
-                // insert sale_product row (FK now satisfied)
+                // insert sale_product row (FK now satisfecho)
                 await this.db.query('INSERT INTO sale_product (sale, product_sku, amount, sub_total) VALUES ($1,$2,$3,$4)', [transactionId, productSku, quantity, totalLineValue]);
-            }
-
-            // update sales totals (one per transaction)
-            for (const [txn, obj] of saleTotals.entries()) {
-                await this.db.query('UPDATE sale SET total = $1 WHERE transaction_id = $2', [obj.total, txn]);
             }
 
             await this.db.query('COMMIT');

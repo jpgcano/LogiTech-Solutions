@@ -5,6 +5,14 @@ class SupplierService {
     }
 
     async addSupplier(supplier) {
+        // validation
+        if (!supplier || !supplier.supplier_email || !supplier.supplier_name) {
+            throw new Error('Missing supplier_email or supplier_name');
+        }
+        // avoid duplicates
+        const existing = await this.suppliers.findByEmail(supplier.supplier_email);
+        if (existing) return existing;
+
         return await this.suppliers.createMany([supplier]);
     }
 
@@ -24,8 +32,12 @@ class SupplierService {
     async deleteSupplierByEmail(email, performedBy = 'system') {
         const existing = await this.suppliers.findByEmail(email);
         if (!existing) return null;
-        // delete and return removed doc
-        await this.suppliers.model.deleteOne({ supplier_email: email });
+        try {
+            await this.suppliers.model.deleteOne({ supplier_email: email });
+        } catch (err) {
+            // handle potential MongoDB errors (unlikely) or wrap for consistency
+            throw new Error(`Unable to delete supplier: ${err.message}`);
+        }
         return existing;
     }
     async deleteSuppliers() {

@@ -8,9 +8,15 @@ class SalesService {
     async synchronizeHistories(formattedData) {
         try {
             console.log("Sincronizando documentos en NoSQL...");
-            await this.storage.deleteAll();
-            const result = await this.storage.createMany(formattedData);
-            return result;
+            // en lugar de eliminar todo, actualizamos/creamos cada documento por cliente
+            for (const record of formattedData) {
+                await this.storage.model.updateOne(
+                    { customer_email: record.customer_email },
+                    { $set: record },
+                    { upsert: true }
+                );
+            }
+            return { ok: true };
         } catch (error) {
             console.error("Error en la sincronización NoSQL:", error);
             throw error;

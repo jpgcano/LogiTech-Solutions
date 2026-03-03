@@ -6,24 +6,31 @@ import postgresDB from './postgres.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-class  DataBaseSetup{
-    async initialize(){
+class DataBaseSetup {
+    async initialize() {
+        try {
+            console.log("Configurando base de datos relacional...");
 
-        try{        
-            console.log("Leyendo base de datos... y configurando posgrest");
+            // Orden crítico: Tablas -> Funciones/Procedures -> Triggers -> Vistas
+            const scripts = [
+                '../../script/table.sql',
+                '../../script/procedures.sql',
+                '../../script/bi_triggers.sql',
+                '../../script/bi_views.sql'
+            ];
 
-        // buscamos el archivo con las definiciones de tablas
-        const slqFilePath = path.resolve(__dirname, '../../script/table.sql');
-        const slqquery = await fs.readFile(slqFilePath, 'utf-8');
+            for (const relativePath of scripts) {
+                const scriptPath = path.join(__dirname, relativePath);
+                const sql = await fs.readFile(scriptPath, 'utf8');
+                await postgresDB.query(sql);
+                console.log(`Ejecutado con éxito: ${path.basename(relativePath)}`);
+            }
 
-        // le pedimos  a posgres  que ejecute el query 
-            await postgresDB.query(slqquery);
-        console.log("Base de datos configurada correctamente");
-        }catch(error){
-            console.error("Error al configurar la base de datos:", error);
+            console.log("Base de datos completamente configurada.");
+        } catch (error) {
+            console.error("Error en la inicialización:", error);
             throw error;
+        }
     }
-
-}
 }
 export default new DataBaseSetup();

@@ -38,6 +38,9 @@ router.post('/migrate', async (req, res) => {try {
 router.post('/Suppliers', async (req, res) => {
     try {
         const supplier = req.body;
+        if (!supplier || !supplier.supplier_email || !supplier.supplier_name) {
+            return res.status(400).json({ ok: false, error: 'supplier_email and supplier_name are required' });
+        }
         const result = await SuppliersService.addSupplier(supplier);
         res.status(201).json(result);
     } catch (error) {

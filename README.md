@@ -73,7 +73,7 @@ This section walks you through two common ways to get the project running:
 
 1. **Clone the repo and install dependencies**
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/jpgcano/LogiTech-Solutions.git
    cd LogiTech-Solutions
    pnpm install      # or npm install
    ```
@@ -148,8 +148,6 @@ If you prefer `docker-compose` you can run:
 pnpm run docker:compose    # requires docker-compose installed
 ```
 This is equivalent to `docker-compose up --build` and leaves containers running in the background.
-
-```
 
 
 ## Frontend

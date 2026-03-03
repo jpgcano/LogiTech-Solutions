@@ -11,6 +11,11 @@ class App {
   middlewares(){
     // Para permitir reciber dados en JSON
     this.server.use(express.json());
+    // simulación de usuario para auditoría
+    this.server.use((req, res, next) => {
+      req.user = { email: 'admin@logitech.com' };
+      next();
+    });
     // servir archivos estáticos del frontend si existen
     this.server.use(express.static('frontend'));
   }
