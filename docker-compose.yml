@@ -1,55 +1,36 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:14
+  db:
+    image: postgres:15
+    container_name: logitech_postgres
     environment:
-      POSTGRES_PASSWORD: 123456
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-123456}
     ports:
-      - "5439:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "${PG_HOST_PORT:-5432}:5432"
 
-
-  mongo:
+  mongodb:
     image: mongo:latest
+    container_name: logitech_mongo
     ports:
-      - "27017:27017"
-    volumes:
-      - mongodata:/data/db
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "${MONGO_HOST_PORT:-27017}:27017"
 
-
-  app:
-    build: .
+  api:
+    build: ./api
+    container_name: logitech_api
+    ports:
+      - "${API_HOST_PORT:-3000}:3000"
     environment:
-      - PORT=3000
-      - POSTGRES_URL=postgresql://postgres:123456@postgres:5432/postgres
-      - MONGO_URL=mongodb://mongo:27017/logitech_v2
-      - FILE_DATA_CSV=data/AM-prueba-desempeno-data.csv
-    ports:
-      - "3000:3000"
+      - POSTGRES_URL=postgresql://postgres:123456@db:5432/postgres
+      - MONGO_URL=mongodb://mongodb:27017/megastore
     depends_on:
-      - postgres
-      - mongo
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health" ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - db
+      - mongodb
 
-volumes:
-  pgdata:
-  mongodata:
+  client:
+    build: ./client
+    container_name: logitech_web
+    ports:
+      - "${WEB_HOST_PORT:-8080}:80"
+    depends_on:
+      - api

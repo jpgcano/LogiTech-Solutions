@@ -83,8 +83,11 @@ class SalesService {
             // COMMIT TRANSACTION
             await client.query('COMMIT');
 
-            // Synchronize to MongoDB after successful transaction
-            await this.synchronizeHistories(customer_email);
+            console.log(`[SALE] ✓ Transacción exitosa: ${transactionId} para ${customer_email}`);
+
+            // Synchronize to MongoDB after successful transaction (resilient - errors don't fail the response)
+            const syncResult = await this.synchronizeHistories(customer_email);
+            console.log(`[SALE] Resultado de sincronización:`, syncResult);
 
             return {
                 ok: true,
@@ -92,21 +95,34 @@ class SalesService {
                 customer_email,
                 total: totalAmount,
                 items_count: products.length,
-                date: today
+                date: today,
+                mongodb_sync: syncResult
             };
         } catch (error) {
-            await client.query('ROLLBACK');
-            console.error('Error creating sale:', error);
-            throw error;
+            try {
+                await client.query('ROLLBACK');
+                console.error(`[SALE] ROLLBACK ejecutado para transacción fallida:`, error.message);
+            } catch (rollbackError) {
+                console.error(`[CRITICAL] Error durante ROLLBACK:`, rollbackError);
+            }
+            
+            // Enrich error with context
+            const enrichedError = new Error(
+                `Sale creation failed: ${error.message}. ${error.code === '23505' ? 'Duplicate record.' : ''}`
+            );
+            enrichedError.code = error.code;
+            enrichedError.detail = error.detail;
+            
+            throw enrichedError;
         } finally {
             client.release();
         }
     }
 
-    // Synchronize customer history to MongoDB
+    // Synchronize customer history to MongoDB with error resilience
     async synchronizeHistories(customerEmail) {
         try {
-            console.log(`Sincronizando historial del cliente ${customerEmail} en MongoDB...`);
+            console.log(`[SYNC] Iniciando sincronización de historial: ${customerEmail}`);
 
             // Fetch complete sales history from PostgreSQL
             const saleHistory = await this.db.query(`
@@ -135,15 +151,16 @@ class SalesService {
             `, [customerEmail]);
 
             if (saleHistory.rows.length === 0) {
-                console.log(`No sales history found for ${customerEmail}`);
-                return { ok: true };
+                console.log(`[SYNC] Sin historial de ventas encontrado para ${customerEmail}`);
+                return { ok: true, synced: false, reason: 'no_sales' };
             }
 
             const firstRow = saleHistory.rows[0];
             const document = {
                 customer_email: firstRow.customer_email,
                 customer_name: firstRow.customer_name,
-                product_name: saleHistory.rows.filter(row => row.product_sku).map(row => ({
+                last_synced: new Date().toISOString(),
+                product_history: saleHistory.rows.filter(row => row.product_sku).map(row => ({
                     transaction_id: row.transaction_id,
                     date: row.date,
                     product_sku: row.product_sku,
@@ -157,17 +174,53 @@ class SalesService {
                 }))
             };
 
-            // Use bulkWrite for atomicity
-            const result = await this.storage.model.updateOne(
-                { customer_email: customerEmail },
-                { $set: document },
-                { upsert: true }
-            );
+            // Try to sync with MongoDB with retry logic
+            let retries = 3;
+            let lastError = null;
 
-            return { ok: true, result };
+            while (retries > 0) {
+                try {
+                    const result = await this.storage.model.updateOne(
+                        { customer_email: customerEmail },
+                        { $set: document },
+                        { upsert: true }
+                    );
+
+                    console.log(`[SYNC] ✓ Sincronización exitosa para ${customerEmail}`, result);
+                    return { ok: true, synced: true, mongodb_result: result };
+                } catch (mongoError) {
+                    lastError = mongoError;
+                    retries--;
+                    if (retries > 0) {
+                        console.warn(`[SYNC] Reintentando sincronización (${retries} intentos restantes)...`, mongoError.message);
+                        await new Promise(resolve => setTimeout(resolve, 500)); // wait 500ms
+                    }
+                }
+            }
+
+            // MongoDB sync failed after retries - log critical error but don't throw
+            console.error(`[CRITICAL] MongoDB sync failed for ${customerEmail} after 3 retries:`, lastError);
+            
+            // Log to audit that sync failed - important for debugging in production
+            console.error(`[AUDIT] SYNC_FAILURE: customer=${customerEmail}, error=${lastError.message}`);
+            
+            return { 
+                ok: true, 
+                synced: false, 
+                reason: 'mongodb_unavailable',
+                error: lastError.message,
+                note: 'Sale was committed to PostgreSQL but MongoDB sync failed'
+            };
+
         } catch (error) {
-            console.error('Error synchronizing sales history:', error);
-            throw error;
+            console.error('[CRITICAL] Fatal error in synchronizeHistories:', error);
+            // Don't throw - this is after COMMIT so we can't rollback
+            return { 
+                ok: true, 
+                synced: false, 
+                reason: 'fatal_error',
+                error: error.message 
+            };
         }
     }
 

@@ -390,5 +390,16 @@ router.get('/bi/top-products-by-category/:category', async (req, res) => {
     }
 });
 
+// AUDIT: Get all audit log entries
+router.get('/audit', async (req, res) => {
+    try {
+        const limit = req.query.limit || 100;
+        const result = await AuditService.getAuditLog(limit);
+        res.status(200).json({ ok: true, data: result || [] });
+    } catch (error) {
+        console.error('Error getting audit log:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
 
 export default router;

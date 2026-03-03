@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet'; //Helmet es un middleware para Express.js que mejora automáticamente la seguridad de tu aplicación Node.js configurando diversos encabezados HTTP 
 import rateLimit from 'express-rate-limit';
+import cors from 'cors';
 import router from './router/router.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
@@ -13,6 +14,15 @@ class App {
   }
 
   middlewares(){
+    // CORS - permitir solicitudes desde cualquier origen (útil para desarrollo)
+    // En producción, restriccionar a dominios específicos
+    this.server.use(cors({
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: false
+    }));
+
     // basic security headers
     this.server.use(helmet());
 

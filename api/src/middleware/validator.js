@@ -1,7 +1,24 @@
 /**
  * Middleware de validación para campos obligatorios
  * Valida que no haya campos vacíos o nulos antes de llegar al servicio
+ * También valida integridad referencial con FK en PostgreSQL
  */
+
+import postgresDB from '../config/postgres.js';
+
+// Helper para validar que un ID existe en una tabla
+async function validateForeignKey(table, idField, idValue) {
+    try {
+        const result = await postgresDB.query(
+            `SELECT 1 FROM ${table} WHERE ${idField} = $1 LIMIT 1`,
+            [idValue]
+        );
+        return result.rows.length > 0;
+    } catch (error) {
+        console.error(`Error validating FK for ${table}.${idField}:`, error);
+        return false;
+    }
+}
 
 export const validateCustomerCreation = (req, res, next) => {
     const { customer_email, customer_name, customer_address, city } = req.body;
@@ -53,7 +70,7 @@ export const validateCustomerUpdate = (req, res, next) => {
     next();
 };
 
-export const validateProductCreation = (req, res, next) => {
+export const validateProductCreation = async (req, res, next) => {
     const { sku, name, categoryId, unitPrice } = req.body;
 
     const errors = [];
@@ -67,7 +84,12 @@ export const validateProductCreation = (req, res, next) => {
     }
 
     if (!categoryId || categoryId === '') {
-        errors.push('categoryId is required and must be a number');
+        errors.push('categoryId is required and must reference a valid category');
+    } else {
+        const categoryExists = await validateForeignKey('category', 'category_id', categoryId);
+        if (!categoryExists) {
+            errors.push(`categoryId "${categoryId}" does not exist in category table`);
+        }
     }
 
     if (unitPrice === undefined || unitPrice === null || unitPrice === '') {
@@ -148,7 +170,7 @@ export const validateSaleCreation = (req, res, next) => {
     next();
 };
 
-export const validateSupplierCreation = (req, res, next) => {
+export const validateSupplierCreation = async (req, res, next) => {
     const { supplier_email, supplier_name } = req.body;
 
     const errors = [];

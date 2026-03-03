@@ -77,3 +77,41 @@ DROP TRIGGER IF EXISTS trg_update_product_supplier_after_update ON product_suppl
 CREATE TRIGGER trg_update_product_supplier_after_update
 AFTER UPDATE OF quantity ON product_supplier
 FOR EACH ROW EXECUTE FUNCTION fn_update_product_supplier_total_value();
+
+
+/*
+  fn_decrease_stock_on_sale:
+  - Descuenta el stock de product_supplier cuando se realiza una venta.
+  - Valida que haya suficiente existencia antes de restar.
+  - Se ejecuta tras INSERT en sale_product.
+*/
+CREATE OR REPLACE FUNCTION fn_decrease_stock_on_sale() RETURNS trigger AS $$
+DECLARE
+  current_stock INT;
+BEGIN
+  -- Obtener stock actual del producto
+  SELECT COALESCE(SUM(quantity), 0) INTO current_stock
+  FROM product_supplier
+  WHERE product_sku = NEW.product_sku;
+
+  -- Validar que hay existencia suficiente
+  IF current_stock < NEW.quantity THEN
+    RAISE EXCEPTION 'Insufficient stock for product %: %  available, % requested',
+      NEW.product_sku, current_stock, NEW.quantity;
+  END IF;
+
+  -- Decrementar stock (toma el primer proveedor disponible)
+  UPDATE product_supplier
+  SET quantity = quantity - NEW.quantity
+  WHERE product_sku = NEW.product_sku
+    AND quantity >= NEW.quantity
+  LIMIT 1;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_decrease_stock_after_insert ON sale_product;
+CREATE TRIGGER trg_decrease_stock_after_insert
+AFTER INSERT ON sale_product
+FOR EACH ROW EXECUTE FUNCTION fn_decrease_stock_on_sale();
