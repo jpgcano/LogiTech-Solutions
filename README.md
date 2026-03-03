@@ -56,9 +56,96 @@ Key PostgreSQL tables (3NF): city, customer, sale, sale_product, product, produc
 
 Key MongoDB collections: Sales (embedded transactions), Suppliers, AuditLogs
 
-Rationale:
-- SQL stores canonical, normalized master data for transactional correctness and constraints.
-- MongoDB stores denormalized customer purchase history (embedded transactions) and audit logs for fast read access.
+---
+
+## Design Justification
+
+### 1. PostgreSQL with Third Normal Form (3NF)
+
+**Why 3NF?**
+- **Eliminates Data Redundancy:** Each piece of information is stored only once. For example, a supplier's email and name are stored in the `supplier` table, not repeated in every transaction.
+- **Maintains Referential Integrity:** Foreign keys ensure that if a supplier is deleted, dependent records are handled (via cascade or constraint violations).
+- **Ensures Transactional Correctness:** Multi-table consistency is guaranteed via ACID transactions. When a sale is recorded, the product, customer, and supplier relationships are validated instantly.
+- **Reduces Update Anomalies:** Updating a customer's address is a single operation, not scattered across multiple sale rows.
+
+**Example:**
+```
+customer (customer_id, customer_email, customer_name, ...)
+sale (transaction_id, customer_id, total, ...)
+product (product_sku, product_name, product_category_id, ...)
+```
+A single customer record is referenced by multiple sales, avoiding duplication.
+
+---
+
+### 2. MongoDB for Denormalized Customer Profiles
+
+**Why Denormalization?**
+- **Fast Read-Heavy Analytics:** A single MongoDB document per customer contains their entire purchase history embedded. No JOINs needed.
+- **Audit & Compliance:** Complete transaction snapshots (with all details at the time of purchase) are preserved for disputes or audits.
+- **Scalability for BI:** Denormalized data is ideal for reporting and dashboards; analytics queries run in milliseconds.
+- **Balance Between Systems:** SQL remains normali for operational writes; Mongo handles analytical reads.
+
+**Structure:**
+```javascript
+{
+  _id: ObjectId,
+  customer_email: "john@example.com",
+  customer_name: "John Doe",
+  product_name: [
+    {
+      transaction_id: "TXN001",
+      date: "2025-03-01",
+      product_sku: "SKU123",
+      quantity: 2,
+      unit_price: 100.00,
+      total_line_value: 200.00,
+      ...
+    }
+  ]
+}
+```
+A single `find()` by email retrieves the entire customer profile without joins.
+
+---
+
+### 3. Triggers & Views for Data Integrity
+
+**Automatic Computation of Derived Data:**
+- **Trigger `trg_update_sale_total_after_insert`:** Every time a line item (`sale_product`) is inserted, the trigger automatically sums all line items and updates `sale.total`. This ensures totals are always accurate without manual code.
+- **View `suppliers_inventory_summary_view`:** Pre-computes supplier statistics (total items supplied, total inventory value) so BI queries are instant.
+- **View `products_revenue_by_category_view`:** Groups products by category and sums revenue for dashboard queries.
+
+**Why Not Calculate in Application Code?**
+- **No Race Conditions:** Database-level computation is atomic; two concurrent transactions won't cause inconsistent totals.
+- **Reduced Code Complexity:** Node.js doesn't need loops to sum values; the database handles it.
+- **Audit Trail:** Every change is logged in the database itself, not dependent on application state.
+
+---
+
+## Rationale Summary
+
+| Concern | Solution | Benefit |
+|---------|----------|---------|
+| Avoiding duplicate data storage | SQL 3NF normalization | Consistency, reduced storage, single source of truth |
+| Fast analytics without joins | MongoDB embedded documents | Sub-millisecond reads for dashboards |
+| Automatic total calculation | Triggers on Sales | No application code bugs; guaranteed correctness |
+| Pre-computed BI metrics | SQL Views | Instant API responses for reports |
+
+---
+
+## Advanced Enhancements (Senior-level)
+
+The project includes several improvements that go beyond the basic requirements:
+
+* **Atomic migrations** – the entire CSV load into PostgreSQL runs in a single transaction (`BEGIN`/`COMMIT`), with a `ROLLBACK` on error. Partial imports are never left in the database.
+* **Bulk operations in MongoDB** – `SalesService.synchronizeHistories` uses `bulkWrite()` instead of per-document `updateOne()` to dramatically reduce network round-trips during migration.
+* **Schema validation** – request payloads for Products and Suppliers are validated against `zod` schemas at the router layer, rejecting bad data before it reaches the service.
+* **Security middleware** – HTTP headers are hardened with `helmet` and rate limiting (`express-rate-limit`) throttles abusive clients.
+* **Automated tests** – a small Jest suite using `supertest` verifies endpoint validation logic (see `tests/router.test.js`), demonstrating readiness for CI integration.
+* **Docker healthchecks** – the `docker-compose.yml` now includes `healthcheck` sections for Postgres, Mongo, and the Node app.
+
+These additions are optional for the original assignment but represent real-world best practices for production systems.
 
 ---
 

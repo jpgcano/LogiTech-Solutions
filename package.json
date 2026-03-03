@@ -5,10 +5,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand",
     "dev": "nodemon src/server.js",
     "docker:quick": "bash scripts/start_docker.sh",
     "docker:compose": "docker-compose up --build"
+  },
+  "jest": {
+    "testEnvironment": "node"
   },
   "keywords": [],
   "author": "",
@@ -18,8 +21,15 @@
     "csv-parse": "^6.1.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
     "mongoose": "^9.2.3",
     "nodemon": "^3.1.14",
-    "pg": "^8.19.0"
+    "pg": "^8.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
   }
 }

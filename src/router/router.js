@@ -5,6 +5,27 @@ import ProductService from "../services/ProductService.js";
 import SalesService from "../services/salesServices.js";
 import AuditService from "../services/AuditService.js";
 import postgresDB from "../config/postgres.js";
+import { z } from 'zod';
+
+// validation schemas
+const supplierSchema = z.object({
+    supplier_email: z.string().email(),
+    supplier_name: z.string().min(1),
+});
+
+const productSchema = z.object({
+    sku: z.string().min(1),
+    name: z.string().min(1),
+    categoryId: z.number().int(),
+    unitPrice: z.number().nonnegative(),
+});
+
+const productUpdateSchema = z.object({
+    name: z.string().min(1).optional(),
+    categoryId: z.number().int().optional(),
+    unitPrice: z.number().nonnegative().optional(),
+});
+
 const router = Router();
 
 router.post('/migrate', async (req, res) => {try {
@@ -37,11 +58,11 @@ router.post('/migrate', async (req, res) => {try {
 
 router.post('/Suppliers', async (req, res) => {
     try {
-        const supplier = req.body;
-        if (!supplier || !supplier.supplier_email || !supplier.supplier_name) {
-            return res.status(400).json({ ok: false, error: 'supplier_email and supplier_name are required' });
+        const parse = supplierSchema.safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
         }
-        const result = await SuppliersService.addSupplier(supplier);
+        const result = await SuppliersService.addSupplier(parse.data);
         res.status(201).json(result);
     } catch (error) {
         console.error('Error creating supplier:', error);
@@ -52,10 +73,13 @@ router.post('/Suppliers', async (req, res) => {
 router.put('/Suppliers/:email', async (req, res) => {
     try {
         const email = req.params.email;
-        const data = req.body;
-        const updated = await SuppliersService.updateSupplierByEmail(email, data);
+        const parse = supplierSchema.partial().safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
+        }
+        const updated = await SuppliersService.updateSupplierByEmail(email, parse.data);
         if (!updated) return res.status(404).json({ ok: false, error: 'Supplier not found' });
-        await AuditService.logUpdate('Supplier', email, { before: null, after: data }, req.user?.email || 'system');
+        await AuditService.logUpdate('Supplier', email, { before: null, after: parse.data }, req.user?.email || 'system');
         res.status(200).json(updated);
     } catch (error) {
         console.error('Error updating supplier:', error);
@@ -103,10 +127,11 @@ router.get('/Products/:sku', async (req, res) => {
 
 router.post('/Products', async (req, res) => {
     try {
-        const { sku, name, categoryId, unitPrice } = req.body;
-        if (!sku || !name || !categoryId || unitPrice === undefined) {
-            return res.status(400).json({ ok: false, error: 'Missing required fields: sku, name, categoryId, unitPrice' });
+        const parse = productSchema.safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
         }
+        const { sku, name, categoryId, unitPrice } = parse.data;
         const product = await ProductService.createProduct(sku, name, categoryId, unitPrice);
         res.status(201).json(product);
     } catch (error) {
@@ -118,10 +143,13 @@ router.post('/Products', async (req, res) => {
 router.put('/Products/:sku', async (req, res) => {
     try {
         const sku = req.params.sku;
-        const data = req.body;
-        const updated = await ProductService.updateProductBySku(sku, data);
+        const parse = productUpdateSchema.safeParse(req.body);
+        if (!parse.success) {
+            return res.status(400).json({ ok: false, error: parse.error.errors });
+        }
+        const updated = await ProductService.updateProductBySku(sku, parse.data);
         if (!updated) return res.status(404).json({ ok: false, error: 'Product not found' });
-        await AuditService.logUpdate('Product', sku, data, req.user?.email || 'system');
+        await AuditService.logUpdate('Product', sku, parse.data, req.user?.email || 'system');
         res.status(200).json(updated);
     } catch (error) {
         console.error('Error updating product:', error);
