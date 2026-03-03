@@ -10,7 +10,7 @@ class MongoDBSetup {
             await mongoose.connect(env.mongo_url)
             console.log("Conexión a MongoDB establecida correctamente");
         } catch (error) {
-            console.error("Error al conectar a MongoDB:", error);4
+            console.error("Error al conectar a MongoDB:", error);
             process.exit(1);
             throw error;
         }

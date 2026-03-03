@@ -20,7 +20,6 @@ class SalesService {
     async getFullReport(email) {
         const history = await this.storage.findByEmail(email);
         if (!history) return null;
-            
         return history;
     }
 }

@@ -21,5 +21,5 @@ config({ path: resolve(__dirname, "../../.env") });
     port : process.env.PORT || 3000,
     mongo_url: process.env.MONGO_URL,
     postgres_url: process.env.POSTGRES_URL,
-    file_data_csv: process.env.FILE_DATA_CSV || "data/simulation_saludplus_data.csv",
+    file_data_csv: process.env.FILE_DATA_CSV || "data/AM-prueba-desempeno-data.csv",
 }

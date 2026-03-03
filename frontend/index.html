@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiTech Solutions - Business Intelligence Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 1.5rem;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      color: #667eea;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #10b981;
+      color: white;
+      border-radius: 20px;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .status-badge.error {
+      background: #ef4444;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .card h2 {
+      color: #667eea;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .results-container {
+      grid-column: 1 / -1;
+    }
+
+    .results-container h2 {
+      margin-bottom: 1.5rem;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+
+    thead {
+      background: #f3f4f6;
+    }
+
+    th {
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #667eea;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .json-view {
+      background: #1f2937;
+      color: #10b981;
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      border-left: 4px solid #ef4444;
+    }
+
+    .loading {
+      text-align: center;
+      color: #667eea;
+      padding: 2rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #9ca3af;
+      padding: 3rem 1rem;
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-box {
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .stat-label {
+      color: #6b7280;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      color: #667eea;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 1.8rem;
+      }
+
+      .results-container {
+        grid-column: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 LogiTech Solutions</h1>
+      <p>Business Intelligence Dashboard</p>
+      <div id="healthStatus" class="status-badge">Verificando...</div>
+    </header>
+
+    <div class="dashboard">
+      <div class="card">
+        <h2>📊 Consultas BI</h2>
+        <div class="form-group">
+          <label for="querySelect">Selecciona una consulta:</label>
+          <select id="querySelect">
+            <option value="suppliers">📦 Resumen de Proveedores</option>
+            <option value="customer">👤 Historial de Cliente</option>
+            <option value="top-products">⭐ Top Productos por Categoría</option>
+          </select>
+        </div>
+        <div id="inputArea"></div>
+        <button id="runBtn">▶️ Ejecutar Consulta</button>
+      </div>
+
+      <div class="card">
+        <h2>🔧 Operaciones</h2>
+        <div class="form-group">
+          <button id="refreshBtn" style="background: #10b981;">🔄 Actualizar Base de Datos</button>
+        </div>
+        <div class="form-group">
+          <button id="statsBtn" style="background: #f59e0b;">📈 Ver Estadísticas</button>
+        </div>
+        <div class="form-group">
+          <button id="clearBtn" style="background: #ef4444;">🗑️ Limpiar Resultados</button>
+        </div>
+      </div>
+
+      <div class="card results-container">
+        <h2>📋 Resultados</h2>
+        <div id="statsDisplay"></div>
+        <div id="result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const base = '/api';
+    const querySelect = document.getElementById('querySelect');
+    const inputArea = document.getElementById('inputArea');
+    const runBtn = document.getElementById('runBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const statsBtn = document.getElementById('statsBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const result = document.getElementById('result');
+    const statsDisplay = document.getElementById('statsDisplay');
+    const healthStatus = document.getElementById('healthStatus');
+
+    // Verificar salud de la API
+    async function checkHealth() {
+      try {
+        const resp = await fetch(`${base}/health`);
+        if (resp.ok) {
+          healthStatus.textContent = '✅ API Conectada';
+          healthStatus.classList.remove('error');
+        } else {
+          healthStatus.textContent = '❌ API No disponible';
+          healthStatus.classList.add('error');
+        }
+      } catch {
+        healthStatus.textContent = '❌ API No disponible';
+        healthStatus.classList.add('error');
+      }
+    }
+
+    // Actualizar campos de entrada según la consulta
+    function updateInput() {
+      const v = querySelect.value;
+      if (v === 'customer') {
+        inputArea.innerHTML = `
+          <div class="form-group">
+            <label for="email">Email del Cliente:</label>
+            <input id="email" placeholder="ej: andres.lopez@gmail.com" value="andres.lopez@gmail.com"/>
+          </div>
+        `;
+      } else if (v === 'top-products') {
+        inputArea.innerHTML = `
+          <div class="form-group">
+            <label for="category">Categoría:</label>
+            <input id="category" placeholder="ej: Electronics" value="Electronics"/>
+          </div>
+        `;
+      } else {
+        inputArea.innerHTML = '';
+      }
+    }
+
+    // Renderizar datos en tabla
+    function renderTable(data) {
+      if (!Array.isArray(data) || data.length === 0) {
+        return renderJSON(data);
+      }
+
+      const keys = Object.keys(data[0]);
+      const thead = `<thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead>`;
+      const tbody = `<tbody>${data.map(row => 
+        `<tr>${keys.map(k => `<td>${formatValue(row[k])}</td>`).join('')}</tr>`
+      ).join('')}</tbody>`;
+
+      return `<div class="table-wrapper"><table>${thead}${tbody}</table></div>`;
+    }
+
+    // Formatear valores en tabla
+    function formatValue(val) {
+      if (typeof val === 'object') return JSON.stringify(val);
+      if (typeof val === 'number') return val.toLocaleString();
+      return val || '-';
+    }
+
+    // Renderizar JSON
+    function renderJSON(data) {
+      return `<div class="json-view">${JSON.stringify(data, null, 2)}</div>`;
+    }
+
+    // Ejecutar consulta
+    runBtn.addEventListener('click', async () => {
+      let url = '';
+      const v = querySelect.value;
+      
+      if (v === 'suppliers') url = `${base}/bi/suppliers-summary`;
+      if (v === 'customer') {
+        const email = document.getElementById('email').value;
+        if (!email) {
+          result.innerHTML = '<div class="error-message">❌ Por favor ingresa un email</div>';
+          return;
+        }
+        url = `${base}/bi/customer-history/${encodeURIComponent(email)}`;
+      }
+      if (v === 'top-products') {
+        const cat = document.getElementById('category').value;
+        if (!cat) {
+          result.innerHTML = '<div class="error-message">❌ Por favor ingresa una categoría</div>';
+          return;
+        }
+        url = `${base}/bi/top-products-by-category/${encodeURIComponent(cat)}`;
+      }
+
+      result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+      statsDisplay.innerHTML = '';
+
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Error ${resp.status}`);
+        const data = await resp.json();
+        result.innerHTML = renderTable(data);
+      } catch (err) {
+        result.innerHTML = `<div class="error-message">❌ Error: ${err.message}</div>`;
+      }
+    });
+
+    // Actualizar base de datos
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = '⏳ Migrando...';
+      try {
+        const resp = await fetch(`${base}/migrate`, { method: 'POST' });
+        const data = await resp.json();
+        result.innerHTML = `<div style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">✅ Migración completada: ${data.message || 'OK'}</div>`;
+      } catch (err) {
+        result.innerHTML = `<div class="error-message">❌ Error en migración: ${err.message}</div>`;
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = '🔄 Actualizar Base de Datos';
+      }
+    });
+
+    // Ver estadísticas
+    statsBtn.addEventListener('click', async () => {
+      statsDisplay.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      try {
+        const [suppliers, categories] = await Promise.all([
+          fetch(`${base}/bi/suppliers-summary`).then(r => r.json()),
+          fetch(`${base}/bi/top-products-by-category/Electronics`).then(r => r.json())
+        ]);
+
+        const supplierData = Array.isArray(suppliers) ? suppliers : [];
+        const categoryData = Array.isArray(categories) ? categories : [];
+
+        const supplierCount = supplierData.length;
+        const totalValue = supplierData.reduce((sum, s) => sum + (s.total_inventory_value || s.total_value || 0), 0);
+        const productCount = categoryData.length;
+
+        statsDisplay.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">Proveedores</div>
+              <div class="stat-value">${supplierCount}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Productos (Top)</div>
+              <div class="stat-value">${productCount}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Valor Total</div>
+              <div class="stat-value">$${(totalValue / 1000).toFixed(1)}K</div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        statsDisplay.innerHTML = `<div class="error-message">❌ Error: ${err.message}</div>`;
+      }
+    });
+
+    // Limpiar resultados
+    clearBtn.addEventListener('click', () => {
+      result.innerHTML = '<div class="empty-state"><p>📭 Resultados limpios</p></div>';
+      statsDisplay.innerHTML = '';
+    });
+
+    // Eventos
+    querySelect.addEventListener('change', updateInput);
+    updateInput();
+    checkHealth();
+    
+    // Verificar salud cada 30 segundos
+    setInterval(checkHealth, 30000);
+
+    // Mensaje inicial
+    result.innerHTML = '<div class="empty-state"><p>👈 Selecciona una consulta para comenzar</p></div>';
+  </script>
+</body>
+</html>

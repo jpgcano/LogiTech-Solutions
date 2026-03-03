@@ -11,6 +11,23 @@ class SupplierService {
     async getSuppliers() {
         return await this.suppliers.model.find({});
     }
+    async getSupplierByEmail(email) {
+        return await this.suppliers.findByEmail(email);
+    }
+    async updateSupplierByEmail(email, data) {
+        // update by replacing document fields (simple approach)
+        const existing = await this.suppliers.findByEmail(email);
+        if (!existing) return null;
+        await this.suppliers.model.updateOne({ supplier_email: email }, { $set: data });
+        return await this.suppliers.findByEmail(data.supplier_email || email);
+    }
+    async deleteSupplierByEmail(email, performedBy = 'system') {
+        const existing = await this.suppliers.findByEmail(email);
+        if (!existing) return null;
+        // delete and return removed doc
+        await this.suppliers.model.deleteOne({ supplier_email: email });
+        return existing;
+    }
     async deleteSuppliers() {
         return await this.suppliers.deleteAll() ;
     }
@@ -19,4 +36,4 @@ class SupplierService {
     }   
 }
 
-export default SupplierService;
+export default new SupplierService();

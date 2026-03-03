@@ -11,6 +11,8 @@ class App {
   middlewares(){
     // Para permitir reciber dados en JSON
     this.server.use(express.json());
+    // servir archivos estáticos del frontend si existen
+    this.server.use(express.static('frontend'));
   }
 
   routes(){

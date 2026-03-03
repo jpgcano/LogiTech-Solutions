@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5439:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  app:
+    build: .
+    environment:
+      - PORT=3000
+      - POSTGRES_URL=postgresql://postgres:123456@postgres:5432/postgres
+      - MONGO_URL=mongodb://mongo:27017/logitech_v2
+      - FILE_DATA_CSV=data/AM-prueba-desempeno-data.csv
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - mongo
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+volumes:
+  pgdata:
+  mongodata:

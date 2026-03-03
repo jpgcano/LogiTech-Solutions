@@ -6,7 +6,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "docker:quick": "bash scripts/start_docker.sh",
+    "docker:compose": "docker-compose up --build"
   },
   "keywords": [],
   "author": "",

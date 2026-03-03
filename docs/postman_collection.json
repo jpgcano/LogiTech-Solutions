@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "LogiTech Solutions API",
+    "description": "REST API for MegaStore Global data migration and management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Migration",
+      "item": [
+        {
+          "name": "Run Migration",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/migrate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "migrate"]
+            },
+            "description": "Execute data migration from CSV (clears and re-inserts)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/Products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by SKU",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/Products/MSE-LOG-502",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Products", "MSE-LOG-502"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"NEW-PROD-001\",\n  \"name\": \"New Test Product\",\n  \"categoryId\": 6,\n  \"unitPrice\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product Name\",\n  \"unitPrice\": 120000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Products/NEW-PROD-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Products", "NEW-PROD-001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/Products/NEW-PROD-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Products", "NEW-PROD-001"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "item": [
+        {
+          "name": "Get All Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/Suppliers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Suppliers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Supplier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier_email\": \"newsupplier@example.com\",\n  \"supplier_name\": \"New Supplier Inc\",\n  \"products_supplied\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Suppliers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Suppliers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Supplier",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier_name\": \"Updated Supplier Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/Suppliers/newsupplier@example.com",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Suppliers", "newsupplier@example.com"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/Suppliers/newsupplier@example.com",
+              "host": ["{{base_url}}"],
+              "path": ["api", "Suppliers", "newsupplier@example.com"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Business Intelligence",
+      "item": [
+        {
+          "name": "Suppliers Summary (Items & Inventory Value)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bi/suppliers-summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bi", "suppliers-summary"]
+            },
+            "description": "Get suppliers with total items supplied and total inventory value (uses suppliers_inventory_summary_view in SQL)"
+          },
+          "response": []
+        },
+        {
+          "name": "Customer Purchase History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bi/customer-history/andres.lopez@gmail.com",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bi", "customer-history", "andres.lopez@gmail.com"]
+            },
+            "description": "Get complete purchase history for a specific customer (email) via MongoDB aggregation"
+          },
+          "response": []
+        },
+        {
+          "name": "Top Products by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bi/top-products-by-category/Electronics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bi", "top-products-by-category", "Electronics"]
+            },
+            "description": "Get top products in a category sorted by revenue (uses products_revenue_by_category_view; try: Electronics, Home, Accessories)"
+          },
+          "response": []
+        }
+      ]
+    },
+
+
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

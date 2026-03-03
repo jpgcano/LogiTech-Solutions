@@ -32,7 +32,6 @@ class PostgresDB {
             return res;
         }
         catch (error) {
-            this.query("ROLLBACK");
             console.error(`Error al ejecutar consulta: ${error}`);
             throw error;
         }
